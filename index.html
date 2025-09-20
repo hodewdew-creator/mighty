@@ -1,306 +1,58 @@
-// Mighty Engine v1 — core logic implementing your finalized rules (v3)
-// - 5 players, 1 Joker, 10 cards each + kitty 3
-// - Bid: NoTrump ("NT" aka 노기) min 12, Suit ("S/D/H/C" aka 기루) min 13, up to 20
-// - Mighty: SA normally, but if trump is S then DA
-// - JokerCall: default killer C3, but if trump is C then killer D3 (only active on a Joker-led trick)
-// - Friend: any card allowed (including Joker/Mighty). If friend card never appears (kitty), Solo
-// - Back Run excluded for now
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Mighty Demo (No build)</title>
+  <style>
+    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 20px; }
+    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+    textarea { width: 100%; height: 360px; }
+    .badge { padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; }
+  </style>
+</head>
+<body>
+  <h1>마이티 엔진 데모 (빌드 없이 JS)</h1>
+  <div class="row">
+    <label>Dealer:
+      <select id="dealer">
+        <option value="0">P0</option><option value="1">P1</option>
+        <option value="2">P2</option><option value="3">P3</option>
+        <option value="4">P4</option>
+      </select>
+    </label>
+    <label>Trump:
+      <select id="trump">
+        <option value="S">S</option><option value="D">D</option>
+        <option value="H">H</option><option value="C">C</option>
+        <option value="NT">NT (노기)</option>
+      </select>
+    </label>
+    <label>Declarer:
+      <select id="declarer">
+        <option value="0">P0</option><option value="1">P1</option>
+        <option value="2">P2</option><option value="3">P3</option>
+        <option value="4">P4</option>
+      </select>
+    </label>
+    <label>Friend card (예: HQ 또는 JOKER, 빈칸=나중에 없음일수도):
+      <input id="friendCard" placeholder="예: HQ / JOKER / SA"/>
+    </label>
+    <label>Seed:
+      <input id="seed" type="number" value="0" style="width:6em"/>
+    </label>
+    <button id="run">랜덤 합법 플레이 1판 실행</button>
+  </div>
 
-// =============================
-// Types & Constants
-// =============================
-export type Suit = 'S' | 'D' | 'H' | 'C' | 'JOKER';
-export type Rank = 'A'|'K'|'Q'|'J'|'10'|'9'|'8'|'7'|'6'|'5'|'4'|'3'|'2'|'JOKER';
-export type Trump = 'S'|'D'|'H'|'C'|'NT';
-export type PlayerId = 0|1|2|3|4;
+  <p>
+    <span class="badge">노기(노트럼프) 최소 12</span>
+    <span class="badge">기루(수트) 최소 13</span>
+    <span class="badge">마이티: 기본 SA, 단 기루=♠이면 DA</span>
+    <span class="badge">조커콜: 기본 ♣3, 단 기루=♣이면 ♦3</span>
+  </p>
 
-export interface Card { suit: Suit; rank: Rank; id: string }
+  <textarea id="log" readonly></textarea>
 
-export interface DealResult {
-  hands: Record<PlayerId, Card[]>;
-  kitty: Card[];
-}
-
-export interface Bid { player: PlayerId; level: number; trump: Trump }
-
-export interface RoundState {
-  trickIndex: number;              // 0..12
-  leader: PlayerId;                // current trick leader
-  trick: { card: Card; player: PlayerId }[];  // cards played this trick (0..n)
-  jokerLedCallSuit?: Exclude<Suit,'JOKER'>;   // when Joker is led, leader calls a suit that others must follow if possible
-}
-
-export interface GameState {
-  dealer: PlayerId;
-  trump: Trump;                    // 'NT' if NoTrump
-  mighty: Card;                    // SA normally, or DA if trump === 'S'
-  bids: Bid[];                     // bidding log (out of scope for this core demo)
-  declarer: PlayerId;              // winner of bidding
-  friend: PlayerId | null;         // null if solo (friend card never surfaced)
-  friendCard: string | null;       // e.g., 'HQ', 'JOKER', 'SA'
-  hands: Record<PlayerId, Card[]>; // 10 each at start
-  kitty: Card[];                   // 3 cards
-  takenTricks: Record<PlayerId, number>;
-  round: RoundState;
-}
-
-export const RANK_ORDER: Record<Exclude<Rank,'JOKER'>, number> = {
-  '2':0,'3':1,'4':2,'5':3,'6':4,'7':5,'8':6,'9':7,'10':8,'J':9,'Q':10,'K':11,'A':12
-};
-
-const SUIT_TIEBREAK: Record<Exclude<Trump,'NT'>, number> = { C:0, H:1, D:2, S:3 }; // for bid tie-breaking if needed
-
-// =============================
-// Utilities: deck, shuffle, dealing
-// =============================
-export function createDeckOneJoker(): Card[] {
-  const suits: Exclude<Suit,'JOKER'>[] = ['S','D','H','C'];
-  const ranks: Exclude<Rank,'JOKER'>[] = ['A','K','Q','J','10','9','8','7','6','5','4','3','2'];
-  const deck: Card[] = [];
-  for (const s of suits) for (const r of ranks) deck.push({ suit: s, rank: r, id: `${s}${r}` });
-  deck.push({ suit: 'JOKER', rank: 'JOKER', id: 'JOKER' });
-  return deck;
-}
-
-export function shuffle<T>(arr: T[]): T[] {
-  const a = [...arr];
-  for (let i=a.length-1;i>0;i--){
-    const j = Math.floor(Math.random()*(i+1));
-    [a[i], a[j]] = [a[j], a[i]];
-  }
-  return a;
-}
-
-export function dealTo5(deck: Card[], kittySize = 3): DealResult {
-  const a = [...deck];
-  const hands: Record<PlayerId, Card[]> = { 0:[],1:[],2:[],3:[],4:[] };
-  // 10 each, remaining 3 to kitty
-  for (let round=0; round<10; round++) {
-    for (let p=0;p<5;p++) hands[p as PlayerId].push(a.pop()!);
-  }
-  const kitty = a.splice(-kittySize);
-  return { hands, kitty };
-}
-
-// =============================
-// Rules helpers (Mighty / JokerCall killer / following)
-// =============================
-export function decideMighty(trump: Trump): Card {
-  return trump === 'S' ? { suit:'D', rank:'A', id:'DA' } : { suit:'S', rank:'A', id:'SA' };
-}
-
-export function jokerCallKiller(trump: Trump): string /* card id */ {
-  // default killer C3, but if trump is C then killer D3
-  return trump === 'C' ? 'D3' : 'C3';
-}
-
-export function mustFollow(leadSuit: Exclude<Suit,'JOKER'>|undefined, hand: Card[], callSuitOnJoker?: Exclude<Suit,'JOKER'>): Card[] {
-  // If Joker was led, the leader called a suit; others must follow that suit if possible
-  const targetSuit = callSuitOnJoker ?? leadSuit;
-  if (!targetSuit) return hand; // first player of trick (no constraint yet)
-  const candidates = hand.filter(c => c.suit === targetSuit);
-  return candidates.length ? candidates : hand;
-}
-
-// =============================
-// Trick resolution per your rules
-// =============================
-export interface ResolveContext {
-  trump: Trump;
-  mighty: string;          // card id e.g. 'SA' or 'DA'
-  jokerLedCallSuit?: Exclude<Suit,'JOKER'>; // set for Joker-led trick
-}
-
-export function resolveTrick(ctx: ResolveContext, trick: {card: Card; player: PlayerId}[], leadSuit?: Exclude<Suit,'JOKER'>): PlayerId {
-  // Priority summary:
-  // 1) Mighty (wins over anything)
-  // 2) Joker-led trick with active JokerCall: killer 3 (C3 or D3 depending on trump) beats Joker
-  // 3) Joker (if present and not killed by JokerCall) beats any non-Mighty
-  // 4) Trump (if trump != NT) > Non-trump; within same suit, higher rank wins
-  // 5) NoTrump: follow-suit highest wins
-
-  // 1) Mighty check
-  const mightyIndex = trick.findIndex(t => t.card.id === ctx.mighty);
-  if (mightyIndex >= 0) return trick[mightyIndex].player;
-
-  // Determine if this is a Joker-led trick
-  const jokerLed = trick.length > 0 && trick[0].card.suit === 'JOKER';
-
-  // 2) JokerCall killer on Joker-led trick
-  if (jokerLed && ctx.jokerLedCallSuit) {
-    const killerId = jokerCallKiller(ctx.trump);
-    const killerIdx = trick.findIndex(t => t.card.id === killerId);
-    if (killerIdx >= 0) return trick[killerIdx].player; // killer beats Joker when Joker-led
-  }
-
-  // 3) Joker (single card in deck). If present, wins unless (a) Mighty present (already handled) or (b) killed above
-  const jokerIdx = trick.findIndex(t => t.card.suit === 'JOKER');
-  if (jokerIdx >= 0) return trick[jokerIdx].player;
-
-  // 4~5) Regular comparison
-  const trump = ctx.trump;
-
-  // Helper to score a card in the current trick context
-  function score(c: Card): number {
-    if (c.suit === 'JOKER') return 10000; // should not reach here because handled above
-    const base = RANK_ORDER[c.rank as Exclude<Rank,'JOKER'>];
-    if (trump !== 'NT' && c.suit === trump) return 500 + base; // any trump outranks non-trump
-    if (leadSuit && c.suit === leadSuit) return 100 + base;     // follow suit outranks off-suit (but below trump)
-    return base;                                                // off-suit, lowest tier
-  }
-
-  let best = 0;
-  for (let i=1;i<trick.length;i++) {
-    if (score(trick[i].card) > score(trick[best].card)) best = i;
-  }
-  return trick[best].player;
-}
-
-// =============================
-// Core engine skeleton
-// =============================
-export interface EngineConfig {
-  dealer: PlayerId;
-  trump: Trump;                 // chosen after bidding
-  declarer: PlayerId;
-  friendCard: string | null;    // e.g. 'HQ', 'JOKER', 'SA'; null means friend to be determined later (or Solo if never appears)
-}
-
-export function initGame(cfg: EngineConfig, deck?: Card[]): GameState {
-  const d = deck ? [...deck] : shuffle(createDeckOneJoker());
-  const { hands, kitty } = dealTo5(d, 3);
-  const mighty = decideMighty(cfg.trump);
-  const takenTricks: Record<PlayerId, number> = {0:0,1:0,2:0,3:0,4:0};
-
-  return {
-    dealer: cfg.dealer,
-    trump: cfg.trump,
-    mighty,
-    bids: [],
-    declarer: cfg.declarer,
-    friend: null,            // will be set when friendCard is revealed (if any)
-    friendCard: cfg.friendCard,
-    hands,
-    kitty,
-    takenTricks,
-    round: { trickIndex: 0, leader: ((cfg.dealer+1)%5) as PlayerId, trick: [] }
-  };
-}
-
-// Play a card (no AI: just enforce follow rules & state transitions)
-export function playCard(state: GameState, player: PlayerId, cardId: string): void {
-  // Validate: player turn order
-  const expectedPlayer = ((state.round.leader + state.round.trick.length) % 5) as PlayerId;
-  if (player !== expectedPlayer) throw new Error(`Wrong turn: expected P${expectedPlayer}, got P${player}`);
-
-  // Find card in hand
-  const hand = state.hands[player];
-  const idx = hand.findIndex(c => c.id === cardId);
-  if (idx < 0) throw new Error(`Card ${cardId} not in player ${player} hand`);
-  const card = hand[idx];
-
-  // Follow rule enforcement
-  const first = state.round.trick[0];
-  const leadSuit: Exclude<Suit,'JOKER'>|undefined = first && first.card.suit !== 'JOKER' ? first.card.suit : undefined;
-  const legal = mustFollow(leadSuit, hand, state.round.jokerLedCallSuit);
-  if (!legal.some(c => c.id === cardId)) throw new Error(`Must follow suit. Tried ${cardId}`);
-
-  // Joker-led handling: if this is the first card and it's Joker, we expect the leader to set call suit *before* playing second card.
-  if (state.round.trick.length === 0 && card.suit === 'JOKER') {
-    // The UI/host should immediately set state.round.jokerLedCallSuit via setJokerLedCallSuit()
-    // before the next player acts.
-  }
-
-  // Apply play
-  hand.splice(idx,1);
-  state.round.trick.push({ card, player });
-}
-
-export function setJokerLedCallSuit(state: GameState, suit: Exclude<Suit,'JOKER'>) {
-  // only valid if first card of trick is Joker and leader is asking
-  const isJokerLed = state.round.trick.length === 1 && state.round.trick[0].card.suit === 'JOKER';
-  if (!isJokerLed) throw new Error('Not a Joker-led situation');
-  state.round.jokerLedCallSuit = suit;
-}
-
-export function finishTrick(state: GameState): PlayerId {
-  if (state.round.trick.length !== 5) throw new Error('Trick not complete');
-  const first = state.round.trick[0];
-  const leadSuit: Exclude<Suit,'JOKER'>|undefined = first.card.suit !== 'JOKER' ? first.card.suit : undefined;
-
-  const winner = resolveTrick(
-    { trump: state.trump, mighty: state.mighty.id, jokerLedCallSuit: state.round.jokerLedCallSuit },
-    state.round.trick,
-    leadSuit
-  );
-
-  state.takenTricks[winner] += 1;
-
-  // Friend reveal check (first time friendCard appears, assign friend)
-  if (state.friend === null && state.friendCard) {
-    const hit = state.round.trick.find(t => t.card.id === state.friendCard);
-    if (hit) state.friend = hit.player;
-  }
-
-  // Next trick setup
-  state.round = { trickIndex: state.round.trickIndex+1, leader: winner, trick: [] };
-  return winner;
-}
-
-export function isHandOver(state: GameState): boolean {
-  // 13 tricks total
-  return state.round.trickIndex >= 13;
-}
-
-export function resultForDeclarerSide(state: GameState, bidLevel: number): { success: boolean; declarerSideTricks: number } {
-  const side = new Set<PlayerId>([ state.declarer ]);
-  if (state.friend !== null) side.add(state.friend);
-  const declarerTricks = [...side].reduce((sum, p) => sum + state.takenTricks[p], 0);
-  return { success: declarerTricks >= bidLevel, declarerSideTricks: declarerTricks };
-}
-
-// =============================
-// Minimal demo driver (non-AI): random legal plays to exercise the engine
-// =============================
-export function demoAutoPlayRound(cfg: EngineConfig, seed = 0): { winnerSide: 'Declarer'|'Defense'; log: string[] } {
-  let deck = createDeckOneJoker();
-  // deterministic-ish shuffle by seed
-  for (let i=0;i<seed;i++) deck = shuffle(deck);
-
-  const state = initGame(cfg, deck);
-  const log: string[] = [];
-
-  // NOTE: This randomly chooses a legal card (not a smart AI). Replace with your AI/policy.
-  function legalChoices(p: PlayerId): Card[] {
-    const first = state.round.trick[0];
-    const leadSuit: Exclude<Suit,'JOKER'>|undefined = first && first.card.suit !== 'JOKER' ? first.card.suit : undefined;
-    return mustFollow(leadSuit, state.hands[p], state.round.jokerLedCallSuit);
-  }
-
-  while (!isHandOver(state)) {
-    while (state.round.trick.length < 5) {
-      const p = ((state.round.leader + state.round.trick.length) % 5) as PlayerId;
-      const choices = legalChoices(p);
-      const pick = choices[Math.floor(Math.random()*choices.length)];
-      if (state.round.trick.length === 0 && pick.suit === 'JOKER') {
-        // Immediately decide a call suit for demo purposes: pick a suit the leader has most of, else 'S'
-        const suitCounts: Record<'S'|'D'|'H'|'C', number> = { S:0,D:0,H:0,C:0 };
-        for (const c of state.hands[p]) if (c.suit !== 'JOKER') suitCounts[c.suit]++;
-        const bestSuit = (Object.entries(suitCounts).sort((a,b)=>b[1]-a[1])[0][0]) as Exclude<Suit,'JOKER'>;
-        setJokerLedCallSuit(state, bestSuit);
-        log.push(`P${p} led JOKER, called ${bestSuit}`);
-      }
-      playCard(state, p, pick.id);
-      log.push(`P${p} -> ${pick.id}`);
-    }
-    const w = finishTrick(state);
-    log.push(`Trick ${state.round.trickIndex} won by P${w}`);
-  }
-
-  // Suppose bidLevel is provided by cfg (for demo choose 13 by default)
-  const evalRes = resultForDeclarerSide(state, Math.max(cfg.trump==='NT' ? 12 : 13, 13));
-  const winnerSide = evalRes.success ? 'Declarer' : 'Defense';
-  log.push(`Declarer side tricks=${evalRes.declarerSideTricks} -> ${winnerSide}`);
-
-  return { winnerSide, log };
-}
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
