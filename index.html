@@ -133,43 +133,43 @@
         @media (max-width:480px){ .pad-label{ font-size:120px; } }
     </style>
 
-    <style id="logsStyles">
-        /* --- Added styles for logs & toast --- */
-        dialog.modal{ border:none; padding:0; border-radius:14px; max-width:92vw; }
-        dialog.modal::backdrop{ background:rgba(0,0,0,.25); }
-        .modal-card{ padding:16px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; }
-        .modal-title{ margin:2px 0 8px; font-size:16px; font-weight:800; }
-        .modal-desc{ margin:0 0 12px; color:#334155; font-size:13px; }
-        .modal-actions{ display:flex; gap:8px; justify-content:flex-end; }
-        .btn.ghost{ background:#fff; }
+<style id="logsStyles">
+/* --- Added styles for logs & toast --- */
+dialog.modal{ border:none; padding:0; border-radius:14px; max-width:92vw; }
+dialog.modal::backdrop{ background:rgba(0,0,0,.25); }
+.modal-card{ padding:16px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; }
+.modal-title{ margin:2px 0 8px; font-size:16px; font-weight:800; }
+.modal-desc{ margin:0 0 12px; color:#334155; font-size:13px; }
+.modal-actions{ display:flex; gap:8px; justify-content:flex-end; }
+.btn.ghost{ background:#fff; }
 
-        dialog.fullscreen{ border:none; padding:0; margin:0; width:100vw; height:100vh; max-width:100vw; max-height:100vh; border-radius:0; }
-        dialog.fullscreen::backdrop{ background:rgba(0,0,0,.15); }
-        .logs-root{ height:100%; display:flex; flex-direction:column; background:#fff; }
-        .logs-topbar{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid #e5e7eb; position:sticky; top:0; background:#fff; z-index:2; }
-        .logs-title{ font-size:18px; font-weight:800; margin:0; }
-        .logs-spacer{ flex:1 1 auto; }
-        .logs-body{ flex:1 1 auto; display:flex; flex-direction:column; height:100%; padding:12px 14px; background:#f8fafc; gap:12px; }
-        #logDays{ flex:2 1 66%; overflow:auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; }
-        .logs-days{ display:flex; flex-direction:column; gap:10px; }
-        .day-row{ display:grid; grid-template-columns: 120px 1fr auto; gap:10px; align-items:center; }
-        .day-date{ font-weight:800; color:#0f172a; }
-        .record-scroller{ overflow-x:auto; white-space:nowrap; scrollbar-width:thin; border-radius:10px; padding:4px 6px; border:1px solid #e5e7eb; background:#fff; }
-        .record-chip{ display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#fff; border-right:1px solid #f1f5f9; padding:6px 10px; border-radius:999px; margin:0 6px 0 0; cursor:pointer; }
-        .record-chip:hover{ background:#f8fafc; }
-        .record-chip .time{ color:#334155; font-weight:800; }
-        .record-chip .avg{ color:#0f172a; }
-        .record-chip .x{ color:#94a3b8; font-weight:700; }
-        .day-avg{ justify-self:end; font-size:12px; color:#1f2937; padding:2px 8px; border-radius:999px; background:#eef6e8; }
-        .chart-wrap{ flex:1 1 34%; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; display:flex; align-items:stretch; }
-        .chart-wrap canvas{ width:100% !important; height:100% !important; }
+dialog.fullscreen{ border:none; padding:0; margin:0; width:100vw; height:100vh; max-width:100vw; max-height:100vh; border-radius:0; }
+dialog.fullscreen::backdrop{ background:rgba(0,0,0,.15); }
+.logs-root{ height:100%; display:flex; flex-direction:column; background:#fff; }
+.logs-topbar{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid #e5e7eb; position:sticky; top:0; background:#fff; z-index:2; }
+.logs-title{ font-size:18px; font-weight:800; margin:0; }
+.logs-spacer{ flex:1 1 auto; }
+.logs-body{ flex:1 1 auto; display:flex; flex-direction:column; height:100%; padding:12px 14px; background:#f8fafc; gap:12px; }
+#logDays{ flex:2 1 66%; overflow:auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; }
+.logs-days{ display:flex; flex-direction:column; gap:10px; }
+.day-row{ display:grid; grid-template-columns: 120px 1fr auto; gap:10px; align-items:center; }
+.day-date{ font-weight:800; color:#0f172a; }
+.record-scroller{ overflow-x:auto; white-space:nowrap; scrollbar-width:thin; border-radius:10px; padding:4px 6px; border:1px solid #e5e7eb; background:#fff; }
+.record-chip{ display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#fff; border-right:1px solid #f1f5f9; padding:6px 10px; border-radius:999px; margin:0 6px 0 0; cursor:pointer; }
+.record-chip:hover{ background:#f8fafc; }
+.record-chip .time{ color:#334155; font-weight:800; }
+.record-chip .avg{ color:#0f172a; }
+.record-chip .x{ color:#94a3b8; font-weight:700; }
+.day-avg{ justify-self:end; font-size:12px; color:#1f2937; padding:2px 8px; border-radius:999px; background:#eef6e8; }
+.chart-wrap{ flex:1 1 34%; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; display:flex; align-items:stretch; }
+.chart-wrap canvas{ width:100% !important; height:100% !important; }
 
-        /* Toast inside #pad */
-        #pad{ position:relative; }
-        #tapArea{ position:relative; } /* in case the app uses tapArea */
-        .toast{ position:absolute; left:50%; top:12px; transform:translateX(-50%); background:#111827; color:#fff; padding:8px 12px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:5; }
-        .toast.show{ opacity:1; transform:translateX(-50%) translateY(-4px); }
-    </style>
+/* Toast inside #pad */
+#pad{ position:relative; }
+#tapArea{ position:relative; } /* in case the app uses tapArea */
+.toast{ position:absolute; left:50%; top:12px; transform:translateX(-50%); background:#111827; color:#fff; padding:8px 12px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:5; }
+.toast.show{ opacity:1; transform:translateX(-50%) translateY(-4px); }
+</style>
 
 </head>
 <body>
@@ -183,7 +183,7 @@
     </h1>
 
     <div class="pad" id="pad">
-        <div class="toast" id="toast">Saved!</div>
+          <div class="toast" id="toast">Saved!</div>
 
         <div class="pad-label" id="padLabel">TAP!</div>
         <div class="pad-footer">
@@ -487,299 +487,246 @@
     })();
 </script>
 
-
-<!-- Upgrade (Premium) Modal -->
-<dialog id="proDialog" class="modal">
+<!-- Save Modal (centered) -->
+<dialog id="saveDialog" class="modal">
   <div class="modal-card">
-    <div class="modal-title">Go Premium?</div>
-    <p class="modal-desc">Unlock record saving and remove ads.</p>
+    <div class="modal-title">Save this record?</div>
+    <p class="modal-desc">This will add the current result to your records.</p>
     <div class="modal-actions">
-      <button class="btn ghost" id="proCancel">Cancel</button>
-      <button class="btn primary" id="proBuy">Upgrade</button>
+      <button class="btn ghost" id="saveCancel">Cancel</button>
+      <button class="btn primary" id="saveOk">Save</button>
     </div>
   </div>
 </dialog>
 
-<!-- Save Modal (centered) -->
-<dialog id="saveDialog" class="modal">
-    <div class="modal-card">
-        <div class="modal-title">Save this record?</div>
-        <p class="modal-desc">This will add the current result to your records.</p>
-        <div class="modal-actions">
-            <button class="btn ghost" id="saveCancel">Cancel</button>
-            <button class="btn primary" id="saveOk">Save</button>
-        </div>
-    </div>
-</dialog>
-
 <!-- Fullscreen Logs -->
 <dialog id="logDialog" class="fullscreen">
-    <div class="logs-root">
-        <div class="logs-topbar">
-            <h3 class="logs-title">Saved records</h3>
-            <div class="logs-spacer"></div>
-            <button class="icon-btn" id="logExport" title="Export CSV">📤</button>
-            <button class="icon-btn" id="logAllClear" title="Clear All">🗑️</button>
-            <button class="icon-btn" id="logClose" title="Close">✕</button>
-        </div>
-        <div class="logs-body">
-            <div id="logDays" class="logs-days"></div>
-            <div class="chart-wrap">
-                <canvas id="logChart"></canvas>
-            </div>
-        </div>
+  <div class="logs-root">
+    <div class="logs-topbar">
+      <h3 class="logs-title">Saved records</h3>
+      <div class="logs-spacer"></div>
+      <button class="icon-btn" id="logExport" title="Export CSV">📤</button>
+      <button class="icon-btn" id="logAllClear" title="Clear All">🗑️</button>
+      <button class="icon-btn" id="logClose" title="Close">✕</button>
     </div>
+    <div class="logs-body">
+      <div id="logDays" class="logs-days"></div>
+      <div class="chart-wrap">
+        <canvas id="logChart"></canvas>
+      </div>
+    </div>
+  </div>
 </dialog>
 
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
 
 <script>
-    /* __BPM_LOGS_MODULE__ */
-    (function(){
+/* __BPM_LOGS_MODULE__ */
+(function(){
 
-      // Gracefully pick pad/tap area and number label
-      const pad = document.getElementById('pad') || document.getElementById('tapArea') || document.body;
-      let toastEl = document.getElementById('toast');
-      if (!toastEl && pad) {
-        toastEl = document.createElement('div');
-        toastEl.id = 'toast';
-        toastEl.className = 'toast';
-        toastEl.textContent = 'Saved!';
-        pad.prepend(toastEl);
-      }
-      function toast(msg) {
-        if (!toastEl) return;
-        toastEl.textContent = msg || 'Saved!';
-        toastEl.classList.add('show');
-        setTimeout(()=>toastEl.classList.remove('show'), 1400);
-      }
+  // Gracefully pick pad/tap area and number label
+  const pad = document.getElementById('pad') || document.getElementById('tapArea') || document.body;
+  let toastEl = document.getElementById('toast');
+  if (!toastEl && pad) {
+    toastEl = document.createElement('div');
+    toastEl.id = 'toast';
+    toastEl.className = 'toast';
+    toastEl.textContent = 'Saved!';
+    pad.prepend(toastEl);
+  }
+  function toast(msg) {
+    if (!toastEl) return;
+    toastEl.textContent = msg || 'Saved!';
+    toastEl.classList.add('show');
+    setTimeout(()=>toastEl.classList.remove('show'), 1400);
+  }
 
-      const logBtn = document.getElementById('logBtn');
-      const logDlg = document.getElementById('logDialog');
-      const logClose = document.getElementById('logClose');
-      const logDays = document.getElementById('logDays');
-      const exportBtn = document.getElementById('logExport');
-      const clearAllBtn = document.getElementById('logAllClear');
-      const chartEl = document.getElementById('logChart');
-      const saveDlg = document.getElementById('saveDialog');
-      const saveOk = document.getElementById('saveOk');
-      const saveCancel = document.getElementById('saveCancel');
+  const logBtn = document.getElementById('logBtn');
+  const logDlg = document.getElementById('logDialog');
+  const logClose = document.getElementById('logClose');
+  const logDays = document.getElementById('logDays');
+  const exportBtn = document.getElementById('logExport');
+  const clearAllBtn = document.getElementById('logAllClear');
+  const chartEl = document.getElementById('logChart');
+  const saveDlg = document.getElementById('saveDialog');
+  const saveOk = document.getElementById('saveOk');
+  const saveCancel = document.getElementById('saveCancel');
 
-      const LOG_KEY = 'bpm_logs_v1';
-      let chart;
+  const LOG_KEY = 'bpm_logs_v1';
+  let chart;
 
-      function load(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||'{}'); }catch(_){
-        return {}; } }
-      function save(data){ localStorage.setItem(LOG_KEY, JSON.stringify(data||{})); }
-      function todayKey(d){
-        const dt = d||new Date();
-        const y = dt.getFullYear();
-        const m = String(dt.getMonth()+1).padStart(2,'0');
-        const d2 = String(dt.getDate()).padStart(2,'0');
-        return `${y}-${m}-${d2}`;
-      }
-      function toAmPmHour(date){
-        const h = date.getHours(); const am = h<12; const h12 = ((h%12)||12);
-        return `${h12}${am?'am':'pm'}`;
-      }
-      function hhmm(d){ const h = String(d.getHours()).padStart(2,'0'); const m = String(d.getMinutes()).padStart(2,'0'); return `${h}:${m}`; }
-      function newId(){ return String(Date.now()) + Math.random().toString(16).slice(2,8); }
-      function dailyAvg(entries){
-        if (!entries || !entries.length) return null;
-        const s = entries.reduce((a,e)=>a+Number(e.avg||0), 0);
-        return Math.round(s/entries.length);
-      }
+  function load(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||'{}'); }catch(_){
+    return {}; } }
+  function save(data){ localStorage.setItem(LOG_KEY, JSON.stringify(data||{})); }
+  function todayKey(d){
+    const dt = d||new Date();
+    const y = dt.getFullYear();
+    const m = String(dt.getMonth()+1).padStart(2,'0');
+    const d2 = String(dt.getDate()).padStart(2,'0');
+    return `${y}-${m}-${d2}`;
+  }
+  function toAmPmHour(date){
+    const h = date.getHours(); const am = h<12; const h12 = ((h%12)||12);
+    return `${h12}${am?'am':'pm'}`;
+  }
+  function hhmm(d){ const h = String(d.getHours()).padStart(2,'0'); const m = String(d.getMinutes()).padStart(2,'0'); return `${h}:${m}`; }
+  function newId(){ return String(Date.now()) + Math.random().toString(16).slice(2,8); }
+  function dailyAvg(entries){
+    if (!entries || !entries.length) return null;
+    const s = entries.reduce((a,e)=>a+Number(e.avg||0), 0);
+    return Math.round(s/entries.length);
+  }
 
-      // Public save entry (values = array of BPMs for current session)
-      function saveEntry(values){
-        if (!Array.isArray(values) || !values.length) return false;
-        const avg = Math.round(values.reduce((a,b)=>a+b,0) / values.length);
-        const now = new Date();
-        const date = todayKey(now);
-        const logs = load();
-        if(!logs[date]) logs[date] = [];
-        logs[date].push({ id:newId(), time:hhmm(now), timeLabel:toAmPmHour(now), values, avg });
-        save(logs);
-        return true;
-      }
+  // Public save entry (values = array of BPMs for current session)
+  function saveEntry(values){
+    if (!Array.isArray(values) || !values.length) return false;
+    const avg = Math.round(values.reduce((a,b)=>a+b,0) / values.length);
+    const now = new Date();
+    const date = todayKey(now);
+    const logs = load();
+    if(!logs[date]) logs[date] = [];
+    logs[date].push({ id:newId(), time:hhmm(now), timeLabel:toAmPmHour(now), values, avg });
+    save(logs);
+    return true;
+  }
 
-      function render(){
-        const logs = load();
-        const dates = Object.keys(logs).sort();
-        logDays.innerHTML = '';
+  function render(){
+    const logs = load();
+    const dates = Object.keys(logs).sort();
+    logDays.innerHTML = '';
 
-        const labels = [];
-        const data = [];
+    const labels = [];
+    const data = [];
 
-        dates.forEach(date=>{
-          const entries = logs[date]||[];
-          const avg = dailyAvg(entries);
-          if (avg!=null){ labels.push(date); data.push(avg); }
+    dates.forEach(date=>{
+      const entries = logs[date]||[];
+      const avg = dailyAvg(entries);
+      if (avg!=null){ labels.push(date); data.push(avg); }
 
-          const row = document.createElement('div');
-          row.className = 'day-row';
+      const row = document.createElement('div');
+      row.className = 'day-row';
 
-          const dd = document.createElement('div');
-          dd.className = 'day-date';
-          dd.textContent = date;
+      const dd = document.createElement('div');
+      dd.className = 'day-date';
+      dd.textContent = date;
 
-          const scroller = document.createElement('div');
-          scroller.className = 'record-scroller';
+      const scroller = document.createElement('div');
+      scroller.className = 'record-scroller';
 
-          entries.forEach(entry=>{
-            const chip = document.createElement('span');
-            chip.className = 'record-chip';
-            chip.title = 'Tap to delete this one';
-            chip.innerHTML = `<span class="time">${entry.timeLabel}</span><span class="x">·</span><span class="avg">${entry.avg}</span>`;
-            chip.addEventListener('click', ()=>{
-              if (confirm('Delete this one?')){
-                const all = load();
-                const arr = (all[date]||[]).filter(e=>e.id!==entry.id);
-                if (arr.length) all[date] = arr; else delete all[date];
-                save(all);
-                render();
-              }
-            });
-            scroller.appendChild(chip);
-          });
-
-          const avgBox = document.createElement('div');
-          avgBox.className = 'day-avg';
-          avgBox.textContent = `AVG ${avg ?? '-'}`;
-
-          row.appendChild(dd);
-          row.appendChild(scroller);
-          row.appendChild(avgBox);
-          logDays.appendChild(row);
-        });
-
-        drawChart(labels, data);
-      }
-
-      function yRangeFrom(data){
-        if (!data || !data.length) return {min:0, max:60};
-        let min = Math.min(...data), max = Math.max(...data);
-        min = Math.floor((min-5)/10)*10;
-        max = Math.ceil((max+5)/10)*10;
-        if (min<0) min = 0;
-        if (max<=min) max = min + 10;
-        return {min, max};
-      }
-
-      function drawChart(labels, data){
-        if (!chartEl) return;
-        if (chart) chart.destroy();
-        const yr = yRangeFrom(data);
-        chart = new Chart(chartEl, {
-          type: 'line',
-          data: { labels, datasets: [{ label:'Daily avg', data, tension:0.35, pointRadius:3, borderWidth:2 }] },
-          options: {
-            maintainAspectRatio:false,
-            responsive:true,
-            plugins:{ legend:{display:false}, tooltip:{intersect:false, callbacks:{ label:(ctx)=>` ${ctx.parsed.y} BPM` }} },
-            scales:{ x:{ grid:{display:false} }, y:{ min:yr.min, max:yr.max, ticks:{ stepSize:10 }, grid:{ color:'rgba(0,0,0,0.06)' } } }
+      entries.forEach(entry=>{
+        const chip = document.createElement('span');
+        chip.className = 'record-chip';
+        chip.title = 'Tap to delete this one';
+        chip.innerHTML = `<span class="time">${entry.timeLabel}</span><span class="x">·</span><span class="avg">${entry.avg}</span>`;
+        chip.addEventListener('click', ()=>{
+          if (confirm('Delete this one?')){
+            const all = load();
+            const arr = (all[date]||[]).filter(e=>e.id!==entry.id);
+            if (arr.length) all[date] = arr; else delete all[date];
+            save(all);
+            render();
           }
         });
-      }
-
-      // Open/close
-      if (logBtn) logBtn.addEventListener('click', ()=>{ render(); logDlg.showModal(); });
-      if (logClose) logClose.addEventListener('click', ()=>logDlg.close());
-
-      // Clear all
-      if (clearAllBtn) clearAllBtn.addEventListener('click', ()=>{
-        if (confirm('Clear all records?')){ localStorage.removeItem(LOG_KEY); render(); }
+        scroller.appendChild(chip);
       });
 
-      // CSV: VALUE first, AVG(daily) last
-      if (exportBtn) exportBtn.addEventListener('click', ()=>{
-        const logs = load();
-        const rows = [['date','time(hh:mm)','timeLabel(3pm)','VALUE','AVG(daily)']];
-        Object.keys(logs).forEach(d=>{
-          const entries = logs[d];
-          const dAvg = dailyAvg(entries);
-          entries.forEach(e=>{ rows.push([d, e.time, e.timeLabel, (e.values||[]).join(' '), dAvg]); });
-        });
-        const csv = rows.map(r=>r.map(x=>`"${String(x).replaceAll('"','""')}"`).join(',')).join('\n');
-        const blob = new Blob([csv], {type:'text/csv'});
-        const a = document.createElement('a');
-        a.href = URL.createObjectURL(blob);
-        a.download = 'bpm_logs.csv';
-        a.click();
-        URL.revokeObjectURL(a.href);
-      });
+      const avgBox = document.createElement('div');
+      avgBox.className = 'day-avg';
+      avgBox.textContent = `AVG ${avg ?? '-'}`;
 
-      // Long-press: attach to #pad if exists; otherwise fall back to body (no-op)
-      let pressTimer;
-      const target = document.getElementById('pad') || document.getElementById('tapArea');
-      const threshold = 600;
-      function lpStart(){ clearTimeout(pressTimer); pressTimer = setTimeout(()=>{ saveDlg?.showModal(); }, threshold); }
-      function lpCancel(){ clearTimeout(pressTimer); }
-      if (target){
-        target.addEventListener('touchstart', lpStart, {passive:true});
-        target.addEventListener('touchend', lpCancel);
-        target.addEventListener('touchmove', lpCancel);
-        target.addEventListener('mousedown', lpStart);
-        target.addEventListener('mouseup', lpCancel);
-        target.addEventListener('mouseleave', lpCancel);
-      }
+      row.appendChild(dd);
+      row.appendChild(scroller);
+      row.appendChild(avgBox);
+      logDays.appendChild(row);
+    });
 
-      // Save modal
-      if (saveCancel) saveCancel.addEventListener('click', ()=> saveDlg.close());
-      if (saveOk) saveOk.addEventListener('click', ()=>{
-        const vals = (window.currentValuesArray && window.currentValuesArray.length) ? window.currentValuesArray : (window.padLabel ? [Number(window.padLabel.textContent)||0] : []);
-        if (vals.length && saveEntry(vals)) toast('Saved!');
-        else alert('Nothing to save yet.');
-        saveDlg.close();
-      });
+    drawChart(labels, data);
+  }
 
-      // Expose
-      window.bpmLogs = { saveNow: saveEntry, render };
+  function yRangeFrom(data){
+    if (!data || !data.length) return {min:0, max:60};
+    let min = Math.min(...data), max = Math.max(...data);
+    min = Math.floor((min-5)/10)*10;
+    max = Math.ceil((max+5)/10)*10;
+    if (min<0) min = 0;
+    if (max<=min) max = min + 10;
+    return {min, max};
+  }
 
-    })();
-</script>
-
-
-<script>
-// ===== Premium gating for Records button =====
-(function(){
-  const proDlg = document.getElementById('proDialog');
-  const proCancel = document.getElementById('proCancel');
-  const proBuy = document.getElementById('proBuy');
-  const logDlg = document.getElementById('logDialog');
-
-  proCancel?.addEventListener('click', ()=> proDlg?.close());
-  proBuy?.addEventListener('click', ()=> {
-    if (window.Android && typeof Android.purchase === 'function') {
-      Android.purchase('premium_upgrade');
-    } else {
-      alert('Purchases are only available in the Android app.');
-    }
-  });
-
-  const orig = document.getElementById('logBtn');
-  if (orig) {
-    const btn = orig.cloneNode(true);
-    orig.parentNode.replaceChild(btn, orig);
-    btn.addEventListener('click', ()=>{
-      const isPro = !!(window.Android && typeof Android.isPro === 'function' && Android.isPro());
-      if (isPro) {
-        try { window.bpmLogs && window.bpmLogs.render && window.bpmLogs.render(); } catch(e){}
-        logDlg?.showModal();
-      } else {
-        proDlg?.showModal();
+  function drawChart(labels, data){
+    if (!chartEl) return;
+    if (chart) chart.destroy();
+    const yr = yRangeFrom(data);
+    chart = new Chart(chartEl, {
+      type: 'line',
+      data: { labels, datasets: [{ label:'Daily avg', data, tension:0.35, pointRadius:3, borderWidth:2 }] },
+      options: {
+        maintainAspectRatio:false,
+        responsive:true,
+        plugins:{ legend:{display:false}, tooltip:{intersect:false, callbacks:{ label:(ctx)=>` ${ctx.parsed.y} BPM` }} },
+        scales:{ x:{ grid:{display:false} }, y:{ min:yr.min, max:yr.max, ticks:{ stepSize:10 }, grid:{ color:'rgba(0,0,0,0.06)' } } }
       }
     });
   }
 
-  window.onProPurchased = function(){
-    try { proDlg?.close(); } catch(e){}
-    try { window.bpmLogs && window.bpmLogs.render && window.bpmLogs.render(); } catch(e){}
-    try { logDlg?.showModal(); } catch(e){}
-  };
+  // Open/close
+  if (logBtn) logBtn.addEventListener('click', ()=>{ render(); logDlg.showModal(); });
+  if (logClose) logClose.addEventListener('click', ()=>logDlg.close());
+
+  // Clear all
+  if (clearAllBtn) clearAllBtn.addEventListener('click', ()=>{
+    if (confirm('Clear all records?')){ localStorage.removeItem(LOG_KEY); render(); }
+  });
+
+  // CSV: VALUE first, AVG(daily) last
+  if (exportBtn) exportBtn.addEventListener('click', ()=>{
+    const logs = load();
+    const rows = [['date','time(hh:mm)','timeLabel(3pm)','VALUE','AVG(daily)']];
+    Object.keys(logs).forEach(d=>{
+      const entries = logs[d];
+      const dAvg = dailyAvg(entries);
+      entries.forEach(e=>{ rows.push([d, e.time, e.timeLabel, (e.values||[]).join(' '), dAvg]); });
+    });
+    const csv = rows.map(r=>r.map(x=>`"${String(x).replaceAll('"','""')}"`).join(',')).join('\n');
+    const blob = new Blob([csv], {type:'text/csv'});
+    const a = document.createElement('a');
+    a.href = URL.createObjectURL(blob);
+    a.download = 'bpm_logs.csv';
+    a.click();
+    URL.revokeObjectURL(a.href);
+  });
+
+  // Long-press: attach to #pad if exists; otherwise fall back to body (no-op)
+  let pressTimer;
+  const target = document.getElementById('pad') || document.getElementById('tapArea');
+  const threshold = 600;
+  function lpStart(){ clearTimeout(pressTimer); pressTimer = setTimeout(()=>{ saveDlg?.showModal(); }, threshold); }
+  function lpCancel(){ clearTimeout(pressTimer); }
+  if (target){ 
+    target.addEventListener('touchstart', lpStart, {passive:true});
+    target.addEventListener('touchend', lpCancel);
+    target.addEventListener('touchmove', lpCancel);
+    target.addEventListener('mousedown', lpStart);
+    target.addEventListener('mouseup', lpCancel);
+    target.addEventListener('mouseleave', lpCancel);
+  }
+
+  // Save modal
+  if (saveCancel) saveCancel.addEventListener('click', ()=> saveDlg.close());
+  if (saveOk) saveOk.addEventListener('click', ()=>{ 
+    const vals = (window.currentValuesArray && window.currentValuesArray.length) ? window.currentValuesArray : (window.padLabel ? [Number(window.padLabel.textContent)||0] : []);
+    if (vals.length && saveEntry(vals)) toast('Saved!');
+    else alert('Nothing to save yet.');
+    saveDlg.close(); 
+  });
+
+  // Expose
+  window.bpmLogs = { saveNow: saveEntry, render };
+
 })();
 </script>
 
 </body>
 </html>
+
 
