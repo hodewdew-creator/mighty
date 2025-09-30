@@ -1,58 +1,785 @@
-<!doctype html>
-<html lang="ko">
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
-  <title>Mighty Demo (No build)</title>
-  <style>
-    body { font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; padding: 20px; }
-    .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
-    textarea { width: 100%; height: 360px; }
-    .badge { padding: 2px 8px; border: 1px solid #ddd; border-radius: 999px; font-size: 12px; }
-  </style>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover" />
+    <title>BPM Custom</title>
+
+    <!-- PWA / Icons (유지) -->
+    <link rel="icon" href="image.png" type="image/png">
+    <link rel="apple-touch-icon" href="image.png">
+    <meta name="theme-color" content="#ffffff">
+    <link rel="manifest" href="manifest.json">
+
+    <style>
+        :root{
+          /* 네이티브가 관리할 안전여백 및 배너 높이(px) */
+          --top-inset: 0px;      /* status bar 등 상단 안전영역 (네이티브 주입) */
+          --bottom-inset: 0px;   /* gesture/nav bar 등 하단 안전영역 (네이티브 주입) */
+          --ad-h: 0px;           /* (선택) 배너 높이 */
+
+          /* 앱 테마 */
+          --accent:#5a8af2;
+          --outline:#000;
+          --padAlpha:1;
+          --padBlur:4px;
+          --footerAlpha:0.6;
+        }
+
+        html, body{
+          height:100%; margin:0; padding:0;
+          font-family:-apple-system,BlinkMacSystemFont,Segoe UI,Roboto,Helvetica,Arial,sans-serif;
+          background:#fff url('default-bg.jpg');
+          background-size:cover; background-position:center; background-repeat:no-repeat;
+          overscroll-behavior:none;
+        }
+
+        /* 한 화면 레이아웃 (전역 하단 패딩 제거) */
+        .app{
+          box-sizing:border-box;
+          height:100%;
+          padding-top: var(--top-inset);   /* 상단만 네이티브 값 반영 */
+          /* padding-bottom 제거: 하단은 .bottom에서만 처리 */
+          display:flex; flex-direction:column; overflow:hidden;
+        }
+
+        h1 { margin:12px 16px 8px; font-size:22px; font-weight:800; display:flex; justify-content:space-between; align-items:center; }
+        .right { display:flex; align-items:center; gap:8px; }
+        .icon-btn { font-size:18px; border:1px solid #e5e7eb; background:#fff; border-radius:10px; width:40px; height:40px; display:grid; place-items:center; cursor:pointer; }
+
+        .pad {
+          flex:1; display:flex; align-items:center; justify-content:center; position:relative; margin:0 16px;
+          border:6px solid var(--accent); border-radius:14px; user-select:none;
+          background:rgba(255,255,255,var(--padAlpha));
+          box-shadow:0 8px 20px rgba(0,0,0,.06);
+          backdrop-filter: blur(var(--padBlur)); -webkit-backdrop-filter: blur(var(--padBlur));
+          transition: transform 140ms ease;
+          min-height: 0; /* flex 컨테이너에서 오버플로 방지 */
+        }
+        .pad.tapped { transform: scale(0.965); }
+
+        .pad-label {
+          font-size:112px; font-weight:900; color:var(--accent); letter-spacing:.5px;
+          text-shadow:
+            0 0 0 var(--outline),
+            2px 0 0 var(--outline), -2px 0 0 var(--outline),
+            0 2px 0 var(--outline),  0 -2px 0 var(--outline),
+            2px 2px 0 var(--outline), -2px 2px 0 var(--outline),
+            2px -2px 0 var(--outline), -2px -2px 0 var(--outline);
+        }
+
+        .pad-footer {
+          position:absolute; left:10px; right:10px; bottom:10px;
+          display:flex; justify-content:center; gap:18px; padding:8px 12px; border-radius:10px;
+          background: rgba(255,255,255,var(--footerAlpha));
+          backdrop-filter: blur(calc(var(--padBlur)/2)); -webkit-backdrop-filter: blur(calc(var(--padBlur)/2));
+          font-weight:700; font-size:14px; letter-spacing:.4px; color:#374151;
+          border:1px solid rgba(0,0,0,0.06);
+        }
+        .pad-footer .label { opacity:.7; margin-right:4px; font-weight:600; }
+
+        /* 하단 버튼 줄: 여기만 인셋 적용 (버튼만 살짝 띄우기) */
+        .bottom {
+          display:flex; gap:10px; margin:12px 16px 12px;
+          margin-bottom: calc(var(--bottom-inset) + var(--ad-h));
+        }
+        .btn { flex:1; height:56px; border:none; border-radius:12px; font-size:18px; font-weight:800; cursor:pointer; }
+        .btn.primary { background:var(--accent); color:#fff; box-shadow:0 10px 20px rgba(105,177,13,.25); }
+        .btn.secondary { background:#eee; color:#111; }
+        .btn.reset{ flex:1.8; }
+        .btn.custom{ flex:0.7; }
+
+        dialog {
+          width:min(520px, 96vw); border:none; border-radius:16px; padding:0; overflow:hidden;
+          box-shadow:0 24px 48px rgba(0,0,0,.25);
+          max-height: 96vh; /* safety cap */
+        }
+        .sheet {
+          background:#fff; padding:14px 16px 16px; display:flex; flex-direction:column; gap:12px; position:relative;
+          /* 작은 화면에서 버튼이 안 잘리도록 내부 스크롤 */
+          max-height: 88vh; overflow:auto;
+        }
+        .row { display:flex; align-items:center; gap:10px; }
+        .row label { width:140px; font-size:14px; color:#374151; }
+        input[type="color"]{ width:44px; height:32px; border:none; padding:0; background:none; }
+        input[type="file"]{ font-size:14px; }
+        .btns { display:flex; justify-content:flex-end; gap:8px; }
+        .note { font-size:12px; color:#6b7280; }
+
+        .dialog-x {
+          position:absolute; top:8px; right:10px; width:34px; height:34px;
+          border:1px solid #e5e7eb; background:#fff; border-radius:10px;
+          display:grid; place-items:center; cursor:pointer; font-size:16px; line-height:1;
+        }
+        .dialog-x:active { transform: scale(0.97); }
+
+        /* Advanced HSV picker */
+        #advPicker{ display:none; gap:12px; padding:10px; border:1px solid #e5e7eb; border-radius:12px; flex-wrap: wrap; }
+        #svBox{
+          position:relative; aspect-ratio:1/1; border-radius:12px; overflow:hidden; cursor:crosshair;
+          width: min(76vw, 320px); min-width: 180px;
+        }
+        #svBox .white{ position:absolute; inset:0; background:linear-gradient(90deg,#fff,rgba(255,255,255,0)); }
+        #svBox .black{ position:absolute; inset:0; background:linear-gradient(0deg,#000,rgba(0,0,0,0)); mix-blend-mode:multiply; }
+        #svKnob{ position:absolute; width:16px; height:16px; border:2px solid #fff; border-radius:999px; box-shadow:0 0 0 1px rgba(0,0,0,.4); transform:translate(-8px,-8px); }
+
+        .chip-list{ display:flex; flex-wrap:wrap; gap:8px; }
+        .chip{ width:28px; height:28px; border-radius:8px; border:1px solid #e5e7eb; cursor:pointer; }
+        .chip:active{ transform:scale(.96); }
+
+        .adv-actions{ display:flex; gap:8px; align-items:flex-end; }
+        .adv-actions .btn{ height:42px; }
+
+        @media (max-width:480px){ .pad-label{ font-size:120px; } }
+    </style>
+
+    <style id="logsStyles">
+        /* --- Added styles for logs & toast --- */
+        dialog.modal{ border:none; padding:0; border-radius:14px; max-width:92vw; }
+        dialog.modal::backdrop{ background:rgba(0,0,0,.25); }
+        .modal-card{ padding:16px; background:#fff; border:1px solid #e5e7eb; border-radius:14px; }
+        .modal-title{ margin:2px 0 8px; font-size:16px; font-weight:800; }
+        .modal-desc{ margin:0 0 12px; color:#334155; font-size:13px; }
+        .modal-actions{ display:flex; gap:8px; justify-content:flex-end; }
+        .btn.ghost{ background:#fff; }
+
+        dialog.fullscreen{ border:none; padding:0; margin:0; width:100vw; height:100vh; max-width:100vw; max-height:100vh; border-radius:0; }
+        dialog.fullscreen::backdrop{ background:rgba(0,0,0,.15); }
+        .logs-root{ height:100%; display:flex; flex-direction:column; background:#fff; }
+        .logs-topbar{ display:flex; align-items:center; gap:10px; padding:12px 14px; border-bottom:1px solid #e5e7eb; position:sticky; top:0; background:#fff; z-index:2; }
+        .logs-title{ font-size:18px; font-weight:800; margin:0; }
+        .logs-spacer{ flex:1 1 auto; }
+        .logs-body{ flex:1 1 auto; display:flex; flex-direction:column; height:100%; padding:12px 14px; background:#f8fafc; gap:12px; }
+        #logDays{ flex:2 1 66%; overflow:auto; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; }
+        .logs-days{ display:flex; flex-direction:column; gap:10px; }
+        .day-row{ display:grid; grid-template-columns: 120px 1fr auto; gap:10px; align-items:center; }
+        .day-date{ font-weight:800; color:#0f172a; }
+        .record-scroller{ overflow-x:auto; white-space:nowrap; scrollbar-width:thin; border-radius:10px; padding:4px 6px; border:1px solid #e5e7eb; background:#fff; }
+        .record-chip{ display:inline-flex; align-items:center; gap:6px; font-size:12px; background:#fff; border-right:1px solid #f1f5f9; padding:6px 10px; border-radius:999px; margin:0 6px 0 0; cursor:pointer; }
+        .record-chip:hover{ background:#f8fafc; }
+        .record-chip .time{ color:#334155; font-weight:800; }
+        .record-chip .avg{ color:#0f172a; }
+        .record-chip .x{ color:#94a3b8; font-weight:700; }
+        .day-avg{ justify-self:end; font-size:12px; color:#1f2937; padding:2px 8px; border-radius:999px; background:#eef6e8; }
+        .chart-wrap{ flex:1 1 34%; background:#fff; border:1px solid #e5e7eb; border-radius:12px; padding:10px; display:flex; align-items:stretch; }
+        .chart-wrap canvas{ width:100% !important; height:100% !important; }
+
+        /* Toast inside #pad */
+        #pad{ position:relative; }
+        #tapArea{ position:relative; } /* in case the app uses tapArea */
+        .toast{ position:absolute; left:50%; top:12px; transform:translateX(-50%); background:#111827; color:#fff; padding:8px 12px; border-radius:999px; font-size:13px; opacity:0; pointer-events:none; transition:opacity .25s ease, transform .25s ease; z-index:5; }
+        .toast.show{ opacity:1; transform:translateX(-50%) translateY(-4px); }
+    </style>
+
 </head>
 <body>
-  <h1>마이티 엔진 데모 (빌드 없이 JS)</h1>
-  <div class="row">
-    <label>Dealer:
-      <select id="dealer">
-        <option value="0">P0</option><option value="1">P1</option>
-        <option value="2">P2</option><option value="3">P3</option>
-        <option value="4">P4</option>
-      </select>
-    </label>
-    <label>Trump:
-      <select id="trump">
-        <option value="S">S</option><option value="D">D</option>
-        <option value="H">H</option><option value="C">C</option>
-        <option value="NT">NT (노기)</option>
-      </select>
-    </label>
-    <label>Declarer:
-      <select id="declarer">
-        <option value="0">P0</option><option value="1">P1</option>
-        <option value="2">P2</option><option value="3">P3</option>
-        <option value="4">P4</option>
-      </select>
-    </label>
-    <label>Friend card (예: HQ 또는 JOKER, 빈칸=나중에 없음일수도):
-      <input id="friendCard" placeholder="예: HQ / JOKER / SA"/>
-    </label>
-    <label>Seed:
-      <input id="seed" type="number" value="0" style="width:6em"/>
-    </label>
-    <button id="run">랜덤 합법 플레이 1판 실행</button>
+<div class="app">
+    <h1>
+        [BPM]
+        <span class="right">
+      <button class="icon-btn" id="soundBtn" title="Feedback On/Off">🔊</button>
+      <button class="icon-btn" id="logBtn" title="View Records">📈</button>
+    </span>
+    </h1>
+
+    <div class="pad" id="pad">
+        <div class="toast" id="toast">Saved!</div>
+
+        <div class="pad-label" id="padLabel">TAP!</div>
+        <div class="pad-footer">
+            <div><span class="label">TAPS</span><span id="tapCount">0</span></div>
+            <div>·</div>
+            <div><span class="label">ELAPSED</span><span id="elapsed">0s</span></div>
+        </div>
+    </div>
+
+    <div class="bottom">
+        <button class="btn primary reset" id="resetBtn">RESET</button>
+        <button class="btn secondary custom" id="customBtn">Custom</button>
+    </div>
+</div>
+
+<dialog id="settings">
+    <div class="sheet">
+        <button class="dialog-x" id="xClose" aria-label="Close settings">✕</button>
+        <h3 style="margin:6px 2px 0;">Personal interface</h3>
+
+        <div class="row" id="rowThemeBasic">
+            <label for="themeColor">Theme color</label>
+            <input type="color" id="themeColor" value="#5a8af2" />
+            <button class="icon-btn" id="openAdvPicker" title="Advanced color picker">🎨</button>
+        </div>
+
+        <div id="advPicker">
+            <div style="flex:1; min-width:180px; display:flex; flex-direction:column; gap:8px;">
+                <div id="svBox">
+                    <div class="white"></div>
+                    <div class="black"></div>
+                    <div id="svKnob"></div>
+                </div>
+                <input id="hue" type="range" min="0" max="360" value="100"
+                       style="-webkit-appearance:none; appearance:none; height:12px; border-radius:999px;
+               background:linear-gradient(90deg, red, yellow, lime, cyan, blue, magenta, red); outline:none;"/>
+                <div style="display:flex; align-items:center; gap:10px;">
+                    <div id="preview" style="width:28px; height:28px; border-radius:8px; border:1px solid #e5e7eb;"></div>
+                    <code id="hexOut" style="font-size:12px; color:#374151;">#5a8af2</code>
+                </div>
+            </div>
+            <div class="adv-actions">
+                <button class="btn secondary" id="advCancel">Cancel</button>
+                <button class="btn primary" id="advApply">Apply</button>
+            </div>
+        </div>
+
+        <div class="row" style="align-items:center;">
+            <label>Presets</label>
+            <div class="chip-list" id="presetChips">
+                <button class="chip" data-color="#5a8af2" title="#5a8af2" style="background:#5a8af2"></button>
+                <button class="chip" data-color="#003399" title="#003399" style="background:#003399"></button>
+                <button class="chip" data-color="#330066" title="#330066" style="background:#330066"></button>
+                <button class="chip" data-color="#CC6699" title="#CC6699" style="background:#CC6699"></button>
+                <button class="chip" data-color="#2563eb" title="#2563eb" style="background:#2563eb"></button>
+                <button class="chip" data-color="#10b981" title="#10b981" style="background:#10b981"></button>
+                <button class="chip" data-color="#f59e0b" title="#f59e0b" style="background:#f59e0b"></button>
+                <button class="chip" data-color="#ef4444" title="#ef4444" style="background:#ef4444"></button>
+                <button class="chip" data-color="#111827" title="#111827" style="background:#111827"></button>
+            </div>
+        </div>
+
+        <div class="row">
+            <label for="bgFile">Background image</label>
+            <input type="file" id="bgFile" accept="image/*" />
+        </div>
+
+        <p class="note">Settings are saved locally and persist across restarts unless site data is cleared or the app is uninstalled.</p>
+
+        <div class="btns">
+            <button class="btn secondary" id="resetSettings">Reset</button>
+            <button class="btn secondary" id="cancelSettings">Cancel</button>
+            <button class="btn primary"   id="saveSettings">Save</button>
+        </div>
+    </div>
+</dialog>
+<script>
+    // ====== BPM & Settings (기존 유지) ======
+    (function(){
+      const SETTINGS_KEY = 'bpm_prefs_v1';
+
+      const pad = document.getElementById('pad');
+      const padLabel = document.getElementById('padLabel');
+      const tapCountEl = document.getElementById('tapCount');
+      const elapsedEl = document.getElementById('elapsed');
+
+      const resetBtn = document.getElementById('resetBtn');
+      const customBtn = document.getElementById('customBtn');
+      const soundBtn = document.getElementById('soundBtn');
+
+      const dlg = document.getElementById('settings');
+      const themeColor = document.getElementById('themeColor');
+      const bgFile = document.getElementById('bgFile');
+
+      const saveSettingsBtn   = document.getElementById('saveSettings');
+      const resetSettingsBtn  = document.getElementById('resetSettings');
+      const cancelSettingsBtn = document.getElementById('cancelSettings');
+      const xCloseBtn         = document.getElementById('xClose');
+
+      // Advanced HSV picker refs
+      const openAdvBtn = document.getElementById('openAdvPicker');
+      const advPicker  = document.getElementById('advPicker');
+      const hueInput   = document.getElementById('hue');
+      const svBox      = document.getElementById('svBox');
+      const svKnob     = document.getElementById('svKnob');
+      const preview    = document.getElementById('preview');
+      const hexOut     = document.getElementById('hexOut');
+
+      const presetChips = document.getElementById('presetChips');
+
+      const isAndroid = /Android/i.test(navigator.userAgent);
+      const forceAdv  = new URLSearchParams(location.search).get('forceAdv') === '1';
+
+      let taps = []; let startTs = 0; let timerId = null;
+      let audioCtx = null;
+
+      function loadPrefs(){
+        try{
+          const raw = localStorage.getItem(SETTINGS_KEY);
+          if(!raw) return { accent:'#5a8af2', bgDataUrl:null, feedbackOn:true };
+          const obj = JSON.parse(raw);
+          if(typeof obj.accent !== 'string') obj.accent = '#5a8af2';
+          if(typeof obj.feedbackOn !== 'boolean') obj.feedbackOn = true;
+          if(!('bgDataUrl' in obj)) obj.bgDataUrl = null;
+          return obj;
+        }catch(e){
+          return { accent:'#5a8af2', bgDataUrl:null, feedbackOn:true };
+        }
+      }
+      let prefs = loadPrefs();
+
+      function applyTheme(hex){ document.documentElement.style.setProperty('--accent', hex); themeColor.value = hex; prefs.accent = hex; }
+      function savePrefs(){ localStorage.setItem(SETTINGS_KEY, JSON.stringify(prefs)); }
+
+      function updateOutlineByBackground(dataUrl){
+        if(!dataUrl){ document.documentElement.style.setProperty('--outline', '#000'); return; }
+        try{
+          const img = new Image();
+          img.onload = ()=>{
+            const c=document.createElement('canvas'); const w=32,h=32; c.width=w; c.height=h;
+            const ctx=c.getContext('2d'); ctx.drawImage(img,0,0,w,h);
+            const d=ctx.getImageData(0,0,w,h).data; let sum=0,n=0;
+            for(let i=0;i<d.length;i+=4){
+              const r=d[i]/255,g=d[i+1]/255,b=d[i+2]/255;
+              const lum=0.2126*r+0.7152*g+0.0722*b; sum+=lum; n++;
+            }
+            const avg=sum/n; const outline = avg>0.6 ? '#000' : '#fff';
+            document.documentElement.style.setProperty('--outline', outline);
+          };
+          img.src=dataUrl;
+        }catch(e){ document.documentElement.style.setProperty('--outline', '#000'); }
+      }
+
+      function updateSoundIcon(){ soundBtn.textContent = prefs.feedbackOn ? '🔊' : '🔇'; }
+      function ensureAudio(){ if(!audioCtx){ try{ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); }catch(e){ audioCtx=null; } } else if(audioCtx.state==='suspended'){ audioCtx.resume().catch(()=>{}); } }
+      function beep(){
+        if(!prefs.feedbackOn) return;
+        let ok=false;
+        try{
+          ensureAudio();
+          if(audioCtx){
+            const o=audioCtx.createOscillator(); const g=audioCtx.createGain();
+            o.type='sine'; o.frequency.value=880; g.gain.value=0.0001;
+            o.connect(g).connect(audioCtx.destination);
+            const t=audioCtx.currentTime;
+            g.gain.exponentialRampToValueAtTime(0.18, t+0.01);
+            g.gain.exponentialRampToValueAtTime(0.0001, t+0.10);
+            o.start(t); o.stop(t+0.11);
+            ok=true;
+          }
+        }catch(e){ ok=false; }
+        if(!ok && navigator.vibrate){ navigator.vibrate(18); }
+      }
+
+      function resetAll(){
+        taps=[]; startTs=0; clearInterval(timerId); timerId=null;
+        padLabel.textContent='TAP!'; tapCountEl.textContent='0'; elapsedEl.textContent='0s';
+        document.documentElement.style.setProperty('--padAlpha','1');
+        document.documentElement.style.setProperty('--padBlur','4px');
+        document.documentElement.style.setProperty('--footerAlpha','0.6');
+      }
+
+      if (openAdvBtn) openAdvBtn.style.display = (isAndroid || forceAdv) ? 'grid' : 'none';
+
+      applyTheme(prefs.accent || '#5a8af2');
+      if(prefs.bgDataUrl){
+        document.body.style.backgroundImage = `url(${prefs.bgDataUrl})`;
+        updateOutlineByBackground(prefs.bgDataUrl);
+      }
+      updateSoundIcon();
+
+      // HSV picker helpers
+      let H = 100, S = 0.7, V = 0.7;
+      function hsvToRgb(h, s, v){ const c=v*s, x=c*(1-Math.abs(((h/60)%2)-1)), m=v-c; let r=0,g=0,b=0;
+        if(h<60){ r=c; g=x; } else if(h<120){ r=x; g=c; } else if(120<=h && h<180){ g=c; b=x; }
+        else if(180<=h && h<240){ g=x; b=c; } else if(240<=h && h<300){ r=x; b=c; } else { r=c; b=x; }
+        return {R:Math.round((r+m)*255), G:Math.round((g+m)*255), B:Math.round((b+m)*255)}; }
+      function rgbToHex(R,G,B){ const h=n=>n.toString(16).padStart(2,'0'); return `#${h(R)}${h(G)}${h(B)}`; }
+      function hexToHsvSafe(hex){ let h=(hex||'').trim(); if(h.startsWith('#')) h=h.slice(1); if(h.length===3) h=h.split('').map(ch=>ch+ch).join(''); if(h.length!==6) return {h:100,s:0.7,v:0.7};
+        const R=parseInt(h.slice(0,2),16), G=parseInt(h.slice(2,4),16), B=parseInt(h.slice(4,6),16);
+        const r=R/255,g=G/255,b=B/255, max=Math.max(r,g,b), min=Math.min(r,g,b), d=max-min;
+        let hh=0; if(d){ if(max===r){ hh=60*(((g-b)/d)%6); } else if(max===g){ hh=60*(((b-r)/d)+2); } else { hh=60*(((r-g)/d)+4); } }
+        if(hh<0) hh+=360; const s=max?d/max:0, v=max; return {h:hh,s:s,v:v}; }
+      function refreshSVBackground(){ const {R,G,B}=hsvToRgb(H,1,1); if(document.getElementById('svBox')) document.getElementById('svBox').style.background=`rgb(${R},${G},${B})`; }
+      function updatePreview(){ const {R,G,B}=hsvToRgb(H,S,V); const hex=rgbToHex(R,G,B); const preview=document.getElementById('preview'); const hexOut=document.getElementById('hexOut'); if(preview) preview.style.background=hex; if(hexOut) hexOut.textContent=hex; themeColor.value=hex; }
+      function positionKnob(px,py){ const k=document.getElementById('svKnob'); if(k){ k.style.left=px+'px'; k.style.top=py+'px'; } }
+
+      function openAdv(){ const hsv = hexToHsvSafe(themeColor.value || '#5a8af2'); H=hsv.h; S=hsv.s; V=hsv.v; if(hueInput) hueInput.value=String(Math.round(H)); refreshSVBackground(); if(svBox){ const r = svBox.getBoundingClientRect(); positionKnob(S*r.width, (1-V)*r.height); } updatePreview(); advPicker.style.display='flex'; dlg.scrollTop = 0; }
+      function closeAdv(){ advPicker.style.display='none'; }
+
+      if (openAdvBtn) openAdvBtn.addEventListener('click', ()=>{ if(isAndroid || forceAdv) openAdv(); });
+      const advApply  = document.getElementById('advApply');
+      const advCancel = document.getElementById('advCancel');
+      if (advCancel)  addEventListener('click', closeAdv);
+      if (advApply)   advApply.addEventListener('click', ()=>{ applyTheme(themeColor.value); savePrefs(); closeAdv(); });
+
+      if (hueInput){
+        hueInput.addEventListener('input', ()=>{ H=+hueInput.value||0; refreshSVBackground(); updatePreview(); });
+      }
+      if (svBox){
+        let dragging=false;
+        const start = e=>{ dragging=true; const t=e.touches?.[0]||e; move(t); e.preventDefault(); };
+        const move  = t=>{ const rect=svBox.getBoundingClientRect(); const x=Math.min(Math.max(0,t.clientX-rect.left),rect.width); const y=Math.min(Math.max(0,t.clientY-rect.top),rect.height); S=x/rect.width; V=1-(y/rect.height); positionKnob(x,y); updatePreview(); };
+        const onMove = e=>{ if(!dragging) return; const t=e.touches?.[0]||e; move(t); };
+        const end    = ()=>{ dragging=false; };
+        svBox.addEventListener('mousedown', start);
+        window.addEventListener('mousemove', onMove);
+        window.addEventListener('mouseup', end);
+        svBox.addEventListener('touchstart', start, {passive:false});
+        window.addEventListener('touchmove', onMove, {passive:false});
+        window.addEventListener('touchend', end);
+      }
+
+      if (presetChips){
+        presetChips.querySelectorAll('.chip').forEach(chip=>{
+          chip.addEventListener('click', ()=>{
+            const c = chip.getAttribute('data-color'); if(!c) return;
+            applyTheme(c); savePrefs();
+            if (advPicker && advPicker.style.display!=='none'){
+              const hsv = hexToHsvSafe(c); H=hsv.h; S=hsv.s; V=hsv.v; refreshSVBackground(); updatePreview(); if(hueInput) value=String(Math.round(H));
+              const r = svBox.getBoundingClientRect(); positionKnob(S*r.width, (1-V)*r.height);
+            }
+          });
+        });
+      }
+
+      function formatElapsed(ms){ return `${Math.floor(ms/1000)}s`; }
+
+      function handleTap(){
+        const now = Date.now();
+        if(!startTs){
+          startTs=now; document.documentElement.style.setProperty('--padAlpha','1'); document.documentElement.style.setProperty('--padBlur','4px'); document.documentElement.style.setProperty('--footerAlpha','0.6'); timerId=setInterval(()=>{ elapsedEl.textContent = formatElapsed(Date.now()-startTs); }, 200);
+        }
+        pad.classList.add('tapped'); setTimeout(()=> pad.classList.remove('tapped'), 140);
+        taps.push(now); tapCountEl.textContent = String(taps.length);
+        const n=Math.min(taps.length,10); const t = n/10; const a=1 + ((0 - 1) * t); const b=4 + ((0 - 4) * t); const f=0.6 + ((0.05 - 0.6) * t);
+        document.documentElement.style.setProperty('--padAlpha', a.toFixed(3));
+        document.documentElement.style.setProperty('--padBlur', b.toFixed(2)+'px');
+        document.documentElement.style.setProperty('--footerAlpha', f.toFixed(3));
+        if(taps.length>1){ const intervals=[]; for(let i=1;i<taps.length;i++) intervals.push(taps[i]-taps[i-1]); const avg=intervals.reduce((a,b)=>a+b,0)/intervals.length; padLabel.textContent = `${Math.round(60000/avg)}`; }
+        if(prefs.feedbackOn){ try{ if(!audioCtx){ audioCtx = new (window.AudioContext||window.webkitAudioContext)(); } const o=audioCtx.createOscillator(); const g=audioCtx.createGain(); o.type='sine'; o.frequency.value=880; g.gain.value=0.0001; o.connect(g).connect(audioCtx.destination); const t0=audioCtx.currentTime; g.gain.exponentialRampToValueAtTime(0.18, t0+0.01); g.gain.exponentialRampToValueAtTime(0.0001, t0+0.10); o.start(t0); o.stop(t0+0.11);}catch(_){ navigator.vibrate && navigator.vibrate(18); }}
+      }
+      pad.addEventListener('click', handleTap);
+      pad.addEventListener('touchstart', (e)=>{ e.preventDefault(); handleTap(); }, {passive:false});
+
+      resetBtn.addEventListener('click', ()=>{ resetAll(); beep(); });
+      customBtn.addEventListener('click', ()=> dlg.showModal());
+      soundBtn.addEventListener('click', ()=>{ prefs.feedbackOn = !prefs.feedbackOn; updateSoundIcon(); savePrefs(); beep(); });
+
+      resetSettingsBtn.addEventListener('click', ()=>{
+        const ok = confirm('Reset theme color and background to defaults? This will not close the dialog.');
+        if(!ok) return;
+        const def='#5a8af2'; applyTheme(def); prefs.accent=def; document.body.style.backgroundImage='none'; prefs.bgDataUrl=null; document.documentElement.style.setProperty('--outline','#000'); savePrefs();
+      });
+
+      cancelSettingsBtn.addEventListener('click', ()=>{ dlg.close(); });
+      saveSettingsBtn.addEventListener('click', ()=>{ const hex=themeColor.value||'#5a8af2'; applyTheme(hex); savePrefs(); dlg.close(); });
+      if(xCloseBtn){ xCloseBtn.addEventListener('click', ()=> dlg.close()); }
+
+      if(bgFile){
+        bgFile.addEventListener('change', ()=>{
+          const f=bgFile.files && bgFile.files[0]; if(!f) return;
+          const r=new FileReader();
+          r.onload=()=>{
+            document.body.style.backgroundImage=`url(${r.result})`;
+            prefs.bgDataUrl=r.result; savePrefs();
+            const img = new Image(); img.onload = ()=>{ const c=document.createElement('canvas'); c.width=32; c.height=32; const x=c.getContext('2d'); x.drawImage(img,0,0,32,32); const d=x.getImageData(0,0,32,32).data; let sum=0,n=0; for(let i=0;i<d.length;i+=4){ sum+=0.2126*(d[i]/255)+0.7152*(d[i+1]/255)+0.0722*(d[i+2]/255); n++; } document.documentElement.style.setProperty('--outline', (sum/n>0.6)?'#000':'#fff'); }; img.src=r.result; };
+          r.readAsDataURL(f);
+        });
+      }
+
+      // ===== 네이티브 연동용 훅 =====
+      // 네이티브에서 setSafeInsets(상단px, 하단px) 호출만 해주면 됨
+      window.setSafeInsets = function(topPx, bottomPx){
+        if (typeof topPx === 'number')   document.documentElement.style.setProperty('--top-inset', topPx + 'px');
+        if (typeof bottomPx === 'number')document.documentElement.style.setProperty('--bottom-inset', bottomPx + 'px');
+      };
+      window.setBannerHeight = function(px){
+        if (typeof px === 'number') document.documentElement.style.setProperty('--ad-h', px + 'px');
+      };
+    })();
+</script>
+
+
+<!-- Upgrade (Premium) Modal -->
+<dialog id="proDialog" class="modal">
+  <div class="modal-card">
+    <div class="modal-title">Go Premium?</div>
+    <p class="modal-desc">Unlock record saving and remove ads.</p>
+    <div class="modal-actions">
+      <button class="btn ghost" id="proCancel">Cancel</button>
+      <button class="btn primary" id="proBuy">Upgrade</button>
+    </div>
   </div>
+</dialog>
 
-  <p>
-    <span class="badge">노기(노트럼프) 최소 12</span>
-    <span class="badge">기루(수트) 최소 13</span>
-    <span class="badge">마이티: 기본 SA, 단 기루=♠이면 DA</span>
-    <span class="badge">조커콜: 기본 ♣3, 단 기루=♣이면 ♦3</span>
-  </p>
+<!-- Save Modal (centered) -->
+<dialog id="saveDialog" class="modal">
+    <div class="modal-card">
+        <div class="modal-title">Save this record?</div>
+        <p class="modal-desc">This will add the current result to your records.</p>
+        <div class="modal-actions">
+            <button class="btn ghost" id="saveCancel">Cancel</button>
+            <button class="btn primary" id="saveOk">Save</button>
+        </div>
+    </div>
+</dialog>
 
-  <textarea id="log" readonly></textarea>
+<!-- Fullscreen Logs -->
+<dialog id="logDialog" class="fullscreen">
+    <div class="logs-root">
+        <div class="logs-topbar">
+            <h3 class="logs-title">Saved records</h3>
+            <div class="logs-spacer"></div>
+            <button class="icon-btn" id="logExport" title="Export CSV">📤</button>
+            <button class="icon-btn" id="logAllClear" title="Clear All">🗑️</button>
+            <button class="icon-btn" id="logClose" title="Close">✕</button>
+        </div>
+        <div class="logs-body">
+            <div id="logDays" class="logs-days"></div>
+            <div class="chart-wrap">
+                <canvas id="logChart"></canvas>
+            </div>
+        </div>
+    </div>
+</dialog>
 
-  <script type="module" src="./app.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+
+<script>
+    /* __BPM_LOGS_MODULE__ */
+    (function(){
+
+      // Gracefully pick pad/tap area and number label
+      const pad = document.getElementById('pad') || document.getElementById('tapArea') || document.body;
+      let toastEl = document.getElementById('toast');
+      if (!toastEl && pad) {
+        toastEl = document.createElement('div');
+        toastEl.id = 'toast';
+        toastEl.className = 'toast';
+        toastEl.textContent = 'Saved!';
+        pad.prepend(toastEl);
+      }
+      function toast(msg) {
+        if (!toastEl) return;
+        toastEl.textContent = msg || 'Saved!';
+        toastEl.classList.add('show');
+        setTimeout(()=>toastEl.classList.remove('show'), 1400);
+      }
+
+      const logBtn = document.getElementById('logBtn');
+      const logDlg = document.getElementById('logDialog');
+      const logClose = document.getElementById('logClose');
+      const logDays = document.getElementById('logDays');
+      const exportBtn = document.getElementById('logExport');
+      const clearAllBtn = document.getElementById('logAllClear');
+      const chartEl = document.getElementById('logChart');
+      const saveDlg = document.getElementById('saveDialog');
+      const saveOk = document.getElementById('saveOk');
+      const saveCancel = document.getElementById('saveCancel');
+
+      const LOG_KEY = 'bpm_logs_v1';
+      let chart;
+
+      function load(){ try{ return JSON.parse(localStorage.getItem(LOG_KEY)||'{}'); }catch(_){
+        return {}; } }
+      function save(data){ localStorage.setItem(LOG_KEY, JSON.stringify(data||{})); }
+      function todayKey(d){
+        const dt = d||new Date();
+        const y = dt.getFullYear();
+        const m = String(dt.getMonth()+1).padStart(2,'0');
+        const d2 = String(dt.getDate()).padStart(2,'0');
+        return `${y}-${m}-${d2}`;
+      }
+      function toAmPmHour(date){
+        const h = date.getHours(); const am = h<12; const h12 = ((h%12)||12);
+        return `${h12}${am?'am':'pm'}`;
+      }
+      function hhmm(d){ const h = String(d.getHours()).padStart(2,'0'); const m = String(d.getMinutes()).padStart(2,'0'); return `${h}:${m}`; }
+      function newId(){ return String(Date.now()) + Math.random().toString(16).slice(2,8); }
+      function dailyAvg(entries){
+        if (!entries || !entries.length) return null;
+        const s = entries.reduce((a,e)=>a+Number(e.avg||0), 0);
+        return Math.round(s/entries.length);
+      }
+
+      // Public save entry (values = array of BPMs for current session)
+      function saveEntry(values){
+        if (!Array.isArray(values) || !values.length) return false;
+        const avg = Math.round(values.reduce((a,b)=>a+b,0) / values.length);
+        const now = new Date();
+        const date = todayKey(now);
+        const logs = load();
+        if(!logs[date]) logs[date] = [];
+        logs[date].push({ id:newId(), time:hhmm(now), timeLabel:toAmPmHour(now), values, avg });
+        save(logs);
+        return true;
+      }
+
+      function render(){
+        const logs = load();
+        const dates = Object.keys(logs).sort();
+        logDays.innerHTML = '';
+
+        const labels = [];
+        const data = [];
+
+        dates.forEach(date=>{
+          const entries = logs[date]||[];
+          const avg = dailyAvg(entries);
+          if (avg!=null){ labels.push(date); data.push(avg); }
+
+          const row = document.createElement('div');
+          row.className = 'day-row';
+
+          const dd = document.createElement('div');
+          dd.className = 'day-date';
+          dd.textContent = date;
+
+          const scroller = document.createElement('div');
+          scroller.className = 'record-scroller';
+
+          entries.forEach(entry=>{
+            const chip = document.createElement('span');
+            chip.className = 'record-chip';
+            chip.title = 'Tap to delete this one';
+            chip.innerHTML = `<span class="time">${entry.timeLabel}</span><span class="x">·</span><span class="avg">${entry.avg}</span>`;
+            chip.addEventListener('click', ()=>{
+              if (confirm('Delete this one?')){
+                const all = load();
+                const arr = (all[date]||[]).filter(e=>e.id!==entry.id);
+                if (arr.length) all[date] = arr; else delete all[date];
+                save(all);
+                render();
+              }
+            });
+            scroller.appendChild(chip);
+          });
+
+          const avgBox = document.createElement('div');
+          avgBox.className = 'day-avg';
+          avgBox.textContent = `AVG ${avg ?? '-'}`;
+
+          row.appendChild(dd);
+          row.appendChild(scroller);
+          row.appendChild(avgBox);
+          logDays.appendChild(row);
+        });
+
+        drawChart(labels, data);
+      }
+
+      function yRangeFrom(data){
+        if (!data || !data.length) return {min:0, max:60};
+        let min = Math.min(...data), max = Math.max(...data);
+        min = Math.floor((min-5)/10)*10;
+        max = Math.ceil((max+5)/10)*10;
+        if (min<0) min = 0;
+        if (max<=min) max = min + 10;
+        return {min, max};
+      }
+
+      function drawChart(labels, data){
+        if (!chartEl) return;
+        if (chart) chart.destroy();
+        const yr = yRangeFrom(data);
+        chart = new Chart(chartEl, {
+          type: 'line',
+          data: { labels, datasets: [{ label:'Daily avg', data, tension:0.35, pointRadius:3, borderWidth:2 }] },
+          options: {
+            maintainAspectRatio:false,
+            responsive:true,
+            plugins:{ legend:{display:false}, tooltip:{intersect:false, callbacks:{ label:(ctx)=>` ${ctx.parsed.y} BPM` }} },
+            scales:{ x:{ grid:{display:false} }, y:{ min:yr.min, max:yr.max, ticks:{ stepSize:10 }, grid:{ color:'rgba(0,0,0,0.06)' } } }
+          }
+        });
+      }
+
+      // Open/close
+      if (logBtn) logBtn.addEventListener('click', ()=>{ render(); logDlg.showModal(); });
+      if (logClose) logClose.addEventListener('click', ()=>logDlg.close());
+
+      // Clear all
+      if (clearAllBtn) clearAllBtn.addEventListener('click', ()=>{
+        if (confirm('Clear all records?')){ localStorage.removeItem(LOG_KEY); render(); }
+      });
+
+      // CSV: VALUE first, AVG(daily) last
+      if (exportBtn) exportBtn.addEventListener('click', ()=>{
+        const logs = load();
+        const rows = [['date','time(hh:mm)','timeLabel(3pm)','VALUE','AVG(daily)']];
+        Object.keys(logs).forEach(d=>{
+          const entries = logs[d];
+          const dAvg = dailyAvg(entries);
+          entries.forEach(e=>{ rows.push([d, e.time, e.timeLabel, (e.values||[]).join(' '), dAvg]); });
+        });
+        const csv = rows.map(r=>r.map(x=>`"${String(x).replaceAll('"','""')}"`).join(',')).join('\n');
+        const blob = new Blob([csv], {type:'text/csv'});
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(blob);
+        a.download = 'bpm_logs.csv';
+        a.click();
+        URL.revokeObjectURL(a.href);
+      });
+
+      // Long-press: attach to #pad if exists; otherwise fall back to body (no-op)
+      let pressTimer;
+      const target = document.getElementById('pad') || document.getElementById('tapArea');
+      const threshold = 600;
+      function lpStart(){ clearTimeout(pressTimer); pressTimer = setTimeout(()=>{ saveDlg?.showModal(); }, threshold); }
+      function lpCancel(){ clearTimeout(pressTimer); }
+      if (target){
+        target.addEventListener('touchstart', lpStart, {passive:true});
+        target.addEventListener('touchend', lpCancel);
+        target.addEventListener('touchmove', lpCancel);
+        target.addEventListener('mousedown', lpStart);
+        target.addEventListener('mouseup', lpCancel);
+        target.addEventListener('mouseleave', lpCancel);
+      }
+
+      // Save modal
+      if (saveCancel) saveCancel.addEventListener('click', ()=> saveDlg.close());
+      if (saveOk) saveOk.addEventListener('click', ()=>{
+        const vals = (window.currentValuesArray && window.currentValuesArray.length) ? window.currentValuesArray : (window.padLabel ? [Number(window.padLabel.textContent)||0] : []);
+        if (vals.length && saveEntry(vals)) toast('Saved!');
+        else alert('Nothing to save yet.');
+        saveDlg.close();
+      });
+
+      // Expose
+      window.bpmLogs = { saveNow: saveEntry, render };
+
+    })();
+</script>
+
+
+<script>
+// ===== Premium gating for Records button =====
+(function(){
+  const proDlg = document.getElementById('proDialog');
+  const proCancel = document.getElementById('proCancel');
+  const proBuy = document.getElementById('proBuy');
+  const logDlg = document.getElementById('logDialog');
+
+  proCancel?.addEventListener('click', ()=> proDlg?.close());
+  proBuy?.addEventListener('click', ()=> {
+    if (window.Android && typeof Android.purchase === 'function') {
+      Android.purchase('premium_upgrade');
+    } else {
+      alert('Purchases are only available in the Android app.');
+    }
+  });
+
+  const orig = document.getElementById('logBtn');
+  if (orig) {
+    const btn = orig.cloneNode(true);
+    orig.parentNode.replaceChild(btn, orig);
+    btn.addEventListener('click', ()=>{
+      const isPro = !!(window.Android && typeof Android.isPro === 'function' && Android.isPro());
+      if (isPro) {
+        try { window.bpmLogs && window.bpmLogs.render && window.bpmLogs.render(); } catch(e){}
+        logDlg?.showModal();
+      } else {
+        proDlg?.showModal();
+      }
+    });
+  }
+
+  window.onProPurchased = function(){
+    try { proDlg?.close(); } catch(e){}
+    try { window.bpmLogs && window.bpmLogs.render && window.bpmLogs.render(); } catch(e){}
+    try { logDlg?.showModal(); } catch(e){}
+  };
+})();
+</script>
+
 </body>
 </html>
+
